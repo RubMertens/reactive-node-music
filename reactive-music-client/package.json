@@ -1,0 +1,18 @@
+{
+  "name": "reactive-music-client",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "serve": "vite preview"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.4",
+    "typescript": "^4.3.2",
+    "vite": "^2.6.4"
+  },
+  "dependencies": {
+    "howler": "^2.2.3",
+    "rxjs": "^7.4.0"
+  }
+}
