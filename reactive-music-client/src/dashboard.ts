@@ -9,15 +9,32 @@ window.onload = () => {
 
   let wss = new WebSocket(configuration.websocketUrl)
 
-  const playTestBtn = document.getElementById('play-test') as HTMLButtonElement
+  // const playTestBtn = document.getElementById('play-test') as HTMLButtonElement
 
-  fromEvent(playTestBtn, 'click').subscribe((click) => {
+  const buttonDiv = document.getElementById('play-btns') as HTMLDivElement
+
+  const songs = ['test', 'adele', 'mario', 'ofortuna']
+
+  songs.forEach((s) => {
+    const btn = document.createElement('button')
+    btn.innerText = `Play ${s}`
+    fromEvent<MouseEvent>(btn, 'click').subscribe((e) => {
+      wss.send(
+        JSON.stringify({
+          type: 'play-song',
+          data: {
+            name: s,
+          },
+        })
+      )
+    })
+    buttonDiv.appendChild(btn)
+  })
+
+  fromEvent<MouseEvent>(document.getElementById('stop-song') as HTMLButtonElement, 'click').subscribe((e) => {
     wss.send(
       JSON.stringify({
-        type: 'play-song',
-        data: {
-          name: 'test',
-        },
+        type: 'stop-song',
       })
     )
   })

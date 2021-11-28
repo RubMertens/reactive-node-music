@@ -16,6 +16,8 @@ const connectedClients: { [key: string]: { id: string; ws: WebSocket } } = {}
 
 const connectedDashboards: { [key: string]: WebSocket } = {}
 
+const stopSongs$ = new Subject<void>()
+
 wss.on('connection', (ws) => {
   const id = uuid()
   connectedClients[id] = { id, ws }
@@ -51,7 +53,7 @@ wss.on('connection', (ws) => {
       console.log('received', playSong)
       musicEngine
         .play(playSong.name)
-        .pipe(takeUntil(destroy$))
+        .pipe(takeUntil(destroy$), takeUntil(stopSongs$))
         .subscribe((n) => {
           console.log('playing note', n)
 
@@ -100,6 +102,9 @@ wss.on('connection', (ws) => {
       console.log(`Connected normal clients: [${Object.keys(connectedClients).length}]`)
       console.log(`Connected Dashboard clients: [${Object.keys(connectedDashboards).length}]`)
     })
+  messages$.pipe(filter((e) => e.type === 'stop-song')).subscribe((_) => {
+    stopSongs$.next()
+  })
 
   fromEvent(ws, 'close').subscribe((close) => {
     destroy$.next()
