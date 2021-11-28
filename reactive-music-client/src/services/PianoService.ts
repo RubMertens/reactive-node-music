@@ -11,7 +11,7 @@ export class PianoService {
 
   preLoadAudio() {
     for (const key in this.audiofiles) {
-      console.log('loading', key)
+      // console.log('loading', key)
       const note = new Howl({
         src: this.audiofiles[key],
         preload: true,
@@ -25,7 +25,7 @@ export class PianoService {
   public play(timedNote: { note: string; velocity: number; duration: number }) {
     console.log('playing', timedNote)
     const audio = this.piano[timedNote.note]
-    audio.volume(timedNote.velocity)
+    audio.volume(timedNote.velocity * 0.1)
     audio.duration(timedNote.duration)
     audio.play()
   }

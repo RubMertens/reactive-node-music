@@ -1,7 +1,7 @@
 import { TimedNote } from './TimedNote'
 import { WebSocketServer, Server, AddressInfo, RawData, MessageEvent, WebSocket } from 'ws'
 import { createServer } from 'http'
-import { connect, filter, fromEvent, map, share, Subject, takeUntil } from 'rxjs'
+import { connect, EMPTY, filter, fromEvent, map, Observable, share, Subject, takeUntil } from 'rxjs'
 import { v4 as uuid } from 'uuid'
 
 import { MusicEngine } from './MusicEngine'
@@ -19,9 +19,21 @@ const connectedDashboards: { [key: string]: WebSocket } = {}
 wss.on('connection', (ws) => {
   const id = uuid()
   connectedClients[id] = { id, ws }
-  console.log(`Connectedc client with id ${id}. ${Object.keys(connectedClients).length} clients connected.`)
+  console.log(
+    `Connectedc client with id ${id}. ${Object.keys(connectedClients).length} clients connected. ${
+      Object.keys(connectedDashboards).length
+    } dashboard clients connected`
+  )
   const destroy$ = new Subject<void>()
 
+  ws.send(
+    JSON.stringify({
+      type: 'connected-as',
+      data: {
+        id,
+      },
+    })
+  )
   const messages$ = fromEvent(ws, 'message').pipe(
     takeUntil(destroy$),
     map((e) => (e as MessageEvent).data as string),
@@ -82,9 +94,11 @@ wss.on('connection', (ws) => {
     )
     .subscribe((msg) => {
       //by the power of closure, we can rely on id being captured in the function scope
-      console.log('Connected dashboard client', id)
       connectedDashboards[id] = ws
       delete connectedClients[id]
+      console.log('Connected dashboard clients', id)
+      console.log(`Connected normal clients: [${Object.keys(connectedClients).length}]`)
+      console.log(`Connected Dashboard clients: [${Object.keys(connectedDashboards).length}]`)
     })
 
   fromEvent(ws, 'close').subscribe((close) => {

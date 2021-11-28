@@ -16,7 +16,7 @@ window.onload = () => {
       JSON.stringify({
         type: 'play-song',
         data: {
-          name: 'mario',
+          name: 'test',
         },
       })
     )
@@ -55,6 +55,7 @@ window.onload = () => {
 
         .subscribe((_) => {
           console.log('trying reconnect')
+          reconnectedSubject$.next()
           wss = new WebSocket(configuration.websocketUrl)
           setupWebSocket()
         })

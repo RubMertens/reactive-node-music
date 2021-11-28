@@ -1,4 +1,4 @@
-import { EMPTY, from, map, Observable, switchMap } from 'rxjs'
+import { EMPTY, from, map, Observable, subscribeOn, switchMap } from 'rxjs'
 import path from 'path'
 import { readFile } from 'fs/promises'
 import { TimedNote } from './TimedNote'
@@ -39,19 +39,28 @@ export class MusicEngine {
       }),
       switchMap((notes: TimedNote[]) => {
         return new Observable<TimedNote>((subscriber) => {
-          const start = Date.now()
-          for (const note of notes) {
-            let played = false
-            while (!played && !subscriber.closed) {
-              const now = Date.now()
-              const pointInSong = now - start
-              if (note.start < pointInSong) {
-                subscriber.next(note)
-                played = true
+          const startTime = Date.now()
+
+          for (let i = 0; i < notes.length; i++) {
+            const note = notes[i]
+
+            const callBackNote = (cb: Function) => {
+              const checkNote = () => {
+                const pointInSong = Date.now() - startTime
+                if (note.start < pointInSong) {
+                  cb()
+                } else {
+                  setTimeout(() => {
+                    checkNote()
+                  }, 0)
+                }
               }
+              checkNote()
             }
+            callBackNote(() => {
+              subscriber.next(note)
+            })
           }
-          subscriber.complete()
           return () => {
             subscriber.complete()
           }
