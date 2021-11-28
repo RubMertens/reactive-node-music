@@ -10,13 +10,9 @@ This app is written as a demo to demonstrate the match between "music" and "reac
 - Make frontend pretty
 - Make dashboard smarten
 - Build docker image(s?)
-- Deploy to azure
+- Deploy to azure / Deploy to github pages?
 - General cleanup op code --> We could Rxify the websocket stuff more!
 
-# In Progress
+## Next up
 
-- make it stop! (play music that is)
-
-#Donesies
-
-- reconnect
+- Synchronization of clients to get a coherent orchestra
