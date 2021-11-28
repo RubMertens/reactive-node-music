@@ -12,3 +12,11 @@ This app is written as a demo to demonstrate the match between "music" and "reac
 - Build docker image(s?)
 - Deploy to azure
 - General cleanup op code --> We could Rxify the websocket stuff more!
+
+# In Progress
+
+- make it stop! (play music that is)
+
+#Donesies
+
+- reconnect
