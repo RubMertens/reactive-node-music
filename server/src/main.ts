@@ -1,7 +1,23 @@
 import { TimedNote } from './TimedNote'
 import { WebSocketServer, Server, AddressInfo, RawData, MessageEvent, WebSocket } from 'ws'
 import { createServer } from 'http'
-import { connect, EMPTY, filter, fromEvent, map, Observable, share, Subject, takeUntil } from 'rxjs'
+import {
+  connect,
+  EMPTY,
+  filter,
+  from,
+  fromEvent,
+  interval,
+  map,
+  Observable,
+  pipe,
+  scan,
+  share,
+  Subject,
+  switchMap,
+  takeUntil,
+  tap,
+} from 'rxjs'
 import { v4 as uuid } from 'uuid'
 
 import { MusicEngine } from './MusicEngine'
@@ -12,7 +28,7 @@ const musicEngine = new MusicEngine()
 
 const wss = new Server({ server: http })
 
-const connectedClients: { [key: string]: { id: string; ws: WebSocket } } = {}
+const connectedClients: { [key: string]: { id: string; ws: WebSocket; ping: number } } = {}
 
 const connectedDashboards: { [key: string]: WebSocket } = {}
 
@@ -20,7 +36,7 @@ const stopSongs$ = new Subject<void>()
 
 wss.on('connection', (ws) => {
   const id = uuid()
-  connectedClients[id] = { id, ws }
+  connectedClients[id] = { id, ws, ping: 1 }
   console.log(
     `Connectedc client with id ${id}. ${Object.keys(connectedClients).length} clients connected. ${
       Object.keys(connectedDashboards).length
@@ -42,30 +58,52 @@ wss.on('connection', (ws) => {
     map((e) => JSON.parse(e) as { type: string; data: any })
     // share()
   )
+
+  interval(500)
+    .pipe(
+      switchMap((i) => {
+        ws.send(
+          JSON.stringify({
+            type: 'ping',
+            data: { time: Date.now(), i },
+          })
+        )
+        return messages$.pipe(
+          filter((e) => e.type === 'pong'),
+          map((e) => e.data as { ping: number })
+        )
+      })
+    )
+    .subscribe((pingmsg) => {
+      console.log(id, pingmsg)
+      connectedClients[id].ping = pingmsg.ping
+    })
+
   messages$.subscribe((e) => console.log('recieved', e))
 
   messages$
     .pipe(
       filter((e) => e.type === 'play-song'),
-      map((e) => e.data as { name: string })
+      map((e) => e.data as { name: string }),
+      tap((e) => console.log('received play song', e)),
+      switchMap((playSong) => musicEngine.play(playSong.name)),
+      takeUntil(destroy$),
+      takeUntil(stopSongs$)
     )
-    .subscribe((playSong) => {
-      console.log('received', playSong)
-      musicEngine
-        .play(playSong.name)
-        .pipe(takeUntil(destroy$), takeUntil(stopSongs$))
-        .subscribe((n) => {
-          console.log('playing note', n)
-
-          for (const clientId in connectedClients) {
-            connectedClients[clientId].ws.send(
-              JSON.stringify({
-                type: 'play-note',
-                data: n,
-              })
-            )
-          }
-        })
+    .subscribe((note) => {
+      const slowestPing = Object.values(connectedClients)
+        .map((cc) => cc.ping)
+        .reduce((prev, curr) => (prev >= curr ? prev : curr))
+      for (const clientId in connectedClients) {
+        setTimeout(() => {
+          connectedClients[clientId].ws.send(
+            JSON.stringify({
+              type: 'play-note',
+              data: note,
+            })
+          )
+        }, slowestPing - connectedClients[clientId].ping)
+      }
     })
 
   messages$
@@ -74,18 +112,24 @@ wss.on('connection', (ws) => {
       map((e) => e.data as { note: string })
     )
     .subscribe((e) => {
+      const slowestPing = Object.values(connectedClients)
+        .map((cc) => cc.ping)
+        .reduce((prev, curr) => (prev >= curr ? prev : curr))
       for (const clientId in connectedClients) {
-        connectedClients[clientId].ws.send(
-          JSON.stringify({
-            type: 'play-note',
-            data: {
-              note: e.note,
-              duration: 1000,
-              velocity: 1000,
-              start: 0,
-            } as TimedNote,
-          })
-        )
+        const client = connectedClients[clientId]
+        setTimeout(() => {
+          client.ws.send(
+            JSON.stringify({
+              type: 'play-note',
+              data: {
+                note: e.note,
+                duration: 1000,
+                velocity: 1000,
+                start: 0,
+              } as TimedNote,
+            })
+          )
+        }, slowestPing - client.ping)
       }
     })
 

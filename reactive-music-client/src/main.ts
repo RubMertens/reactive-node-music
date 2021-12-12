@@ -37,12 +37,17 @@ window.onload = () => {
   piano.preLoadAudio()
 
   const loadButton = document.getElementById('join-btn') as HTMLButtonElement
+  const loadLocalhostbutton = document.getElementById('join-btn-local') as HTMLButtonElement
   const connectedAs = document.getElementById('connected-as') as HTMLDivElement
 
   let wss: WebSocket
   fromEvent<MouseEvent>(loadButton, 'click').subscribe((e) => {
     console.log('join clicked')
     wss = new WebSocket(configuration.websocketUrl)
+    setupWebSocket()
+  })
+  fromEvent<MouseEvent>(loadLocalhostbutton, 'click').subscribe((e) => {
+    wss = new WebSocket('ws://localhost:8080')
     setupWebSocket()
   })
 
@@ -86,6 +91,23 @@ window.onload = () => {
       .subscribe((e) => {
         console.log('playing', e)
         piano.play(e)
+      })
+
+    parsedMessage$
+      .pipe(
+        filter((e) => e.type === 'ping'),
+        map((e) => e.data as { time: number; i: number })
+      )
+      .subscribe((pingmsg) => {
+        wss.send(
+          JSON.stringify({
+            type: 'pong',
+            data: {
+              ping: Date.now() - pingmsg.time,
+              i: pingmsg.i,
+            },
+          })
+        )
       })
   }
 }
