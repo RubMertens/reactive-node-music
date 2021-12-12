@@ -16,3 +16,4 @@ This app is written as a demo to demonstrate the match between "music" and "reac
 ## Next up
 
 - Synchronization of clients to get a coherent orchestra
+    

@@ -1,4 +1,4 @@
-import { EMPTY, from, map, Observable, subscribeOn, switchMap } from 'rxjs'
+import { delay, EMPTY, from, map, merge, Observable, of, subscribeOn, switchMap } from 'rxjs'
 import path from 'path'
 import { readFile } from 'fs/promises'
 import { TimedNote } from './TimedNote'
@@ -19,6 +19,40 @@ const noteConversionMap: { [key: string]: string } = {
 }
 
 export class MusicEngine {
+  private callBackMusicPlayer(notes: TimedNote[]): Observable<TimedNote> {
+    return new Observable<TimedNote>((subscriber) => {
+      const startTime = Date.now()
+
+      for (let i = 0; i < notes.length; i++) {
+        const note = notes[i]
+
+        const callBackNote = (cb: Function) => {
+          const checkNote = () => {
+            const pointInSong = Date.now() - startTime
+            if (note.start < pointInSong) {
+              cb()
+            } else {
+              setTimeout(() => {
+                checkNote()
+              }, 0)
+            }
+          }
+          checkNote()
+        }
+        callBackNote(() => {
+          subscriber.next(note)
+        })
+      }
+      return () => {
+        subscriber.complete()
+      }
+    })
+  }
+
+  private delayMusicPlayer(notes: TimedNote[]): Observable<TimedNote> {
+    return merge(...notes.map((n) => of(n).pipe(delay(n.start))))
+  }
+
   play(songName: string): Observable<TimedNote> {
     return from(readFile(path.resolve(__dirname, `../files/music/${songName}.json`))).pipe(
       map((file) => {
@@ -38,36 +72,9 @@ export class MusicEngine {
           })
       }),
       switchMap((notes: TimedNote[]) => {
-        return new Observable<TimedNote>((subscriber) => {
-          const startTime = Date.now()
-
-          for (let i = 0; i < notes.length; i++) {
-            const note = notes[i]
-
-            const callBackNote = (cb: Function) => {
-              const checkNote = () => {
-                const pointInSong = Date.now() - startTime
-                if (note.start < pointInSong) {
-                  cb()
-                } else {
-                  setTimeout(() => {
-                    checkNote()
-                  }, 0)
-                }
-              }
-              checkNote()
-            }
-            callBackNote(() => {
-              subscriber.next(note)
-            })
-          }
-          return () => {
-            subscriber.complete()
-          }
-        })
+        return this.callBackMusicPlayer(notes)
+        // return this.delayMusicPlayer(notes)
       })
     )
-
-    return EMPTY
   }
 }
