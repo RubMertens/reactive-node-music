@@ -2,7 +2,19 @@ import { UserManager } from './services/UserManager'
 import './style.css'
 
 import { configuration } from './configuration'
-import { filter, fromEvent, interval, map, startWith, Subject, switchMap, takeUntil, withLatestFrom } from 'rxjs'
+import {
+  filter,
+  fromEvent,
+  interval,
+  map,
+  merge,
+  startWith,
+  Subject,
+  switchMap,
+  takeUntil,
+  tap,
+  withLatestFrom,
+} from 'rxjs'
 
 window.onload = () => {
   console.log('DOM loaded')
@@ -49,6 +61,20 @@ window.onload = () => {
           data: { note: key },
         })
       )
+    })
+
+    const messages$ = fromEvent<MessageEvent>(wss, 'message').pipe(
+      map((ms) => JSON.parse(ms.data) as { type: string; data: any }),
+      tap((m) => console.log(m))
+    )
+
+    messages$.pipe(filter((m) => m.type === 'connected-clients')).subscribe((connectedClients) => {
+      const connectedClientDOM = document.getElementById('connected-clients') as HTMLElement
+      const clients = connectedClients.data as { name: string; ping: number }[]
+      connectedClientDOM.innerText = `${clients
+        .sort((c) => c.ping)
+        .map((c) => `${c.name} :: ${c.ping}`)
+        .join('\n')}`
     })
 
     wss.onopen = (opened) => {

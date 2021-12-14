@@ -1,23 +1,7 @@
 import { TimedNote } from './TimedNote'
-import { WebSocketServer, Server, AddressInfo, RawData, MessageEvent, WebSocket } from 'ws'
+import { Server, AddressInfo, MessageEvent, WebSocket } from 'ws'
 import { createServer } from 'http'
-import {
-  connect,
-  EMPTY,
-  filter,
-  from,
-  fromEvent,
-  interval,
-  map,
-  Observable,
-  pipe,
-  scan,
-  share,
-  Subject,
-  switchMap,
-  takeUntil,
-  tap,
-} from 'rxjs'
+import { filter, fromEvent, interval, map, Subject, switchMap, takeUntil, tap } from 'rxjs'
 import { v4 as uuid } from 'uuid'
 
 import { MusicEngine } from './MusicEngine'
@@ -52,6 +36,19 @@ wss.on('connection', (ws) => {
       },
     })
   )
+
+  const publishConnectedClients = () => {
+    Object.values(connectedDashboards).forEach((cd) =>
+      cd.send(
+        JSON.stringify({
+          type: 'connected-clients',
+          data: Object.values(connectedClients).map((cc) => ({ name: cc.id, ping: cc.ping })),
+        })
+      )
+    )
+  }
+  publishConnectedClients()
+
   const messages$ = fromEvent(ws, 'message').pipe(
     takeUntil(destroy$),
     map((e) => (e as MessageEvent).data as string),
@@ -59,27 +56,25 @@ wss.on('connection', (ws) => {
     // share()
   )
 
-  interval(500)
-    .pipe(
-      switchMap((i) => {
-        ws.send(
-          JSON.stringify({
-            type: 'ping',
-            data: { time: Date.now(), i },
-          })
-        )
-        return messages$.pipe(
-          filter((e) => e.type === 'pong'),
-          map((e) => e.data as { ping: number })
-        )
-      })
-    )
-    .subscribe((pingmsg) => {
-      console.log(id, pingmsg)
-      connectedClients[id].ping = pingmsg.ping
-    })
+  interval(500).subscribe((i) => {
+    if (connectedClients[id])
+      ws.send(
+        JSON.stringify({
+          type: 'ping',
+          data: { time: Date.now(), i },
+        })
+      )
+  })
 
-  messages$.subscribe((e) => console.log('recieved', e))
+  messages$
+    .pipe(
+      filter((e) => e.type === 'pong'),
+      map((e) => e.data as { ping: number })
+    )
+    .subscribe((pingMsg) => {
+      publishConnectedClients()
+      return (connectedClients[id].ping = pingMsg.ping)
+    })
 
   messages$
     .pipe(
@@ -145,6 +140,8 @@ wss.on('connection', (ws) => {
       console.log('Connected dashboard clients', id)
       console.log(`Connected normal clients: [${Object.keys(connectedClients).length}]`)
       console.log(`Connected Dashboard clients: [${Object.keys(connectedDashboards).length}]`)
+
+      publishConnectedClients()
     })
   messages$.pipe(filter((e) => e.type === 'stop-song')).subscribe((_) => {
     stopSongs$.next()
