@@ -1,5 +1,4 @@
 import { UserManager } from './services/UserManager'
-import './style.css'
 
 import { configuration } from './configuration'
 import {

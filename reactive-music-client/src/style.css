@@ -1,8 +1,95 @@
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* You can add global styles to this file, and also import other style files */
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+@font-face {
+  font-family: fa;
+  src: url(./assets/PressStart2P-Regular.ttf);
+}
+
+body {
+  background: url(./assets/dominik-scythe-412561-cropped.jpg) no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+
+  background-color: black;
+
+  height: 100vh;
+  margin: 0;
+}
+
+header {
+  font-family: fa, monospace;
+  font-size: 1.2rem;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  color: white;
+  padding: 1em 0;
+  margin: 0;
+  width: 100%;
+  height: 20%;
+}
+
+main {
+  font-family: fa, monospace;
+  display: flex;
+  width: 100%;
+  margin: auto;
+  padding: 1em 0;
+
+  background-color: #d7d2c4;
+  border-radius: 8px;
+  border: black solid 4px;
+}
+
+@media (max-width: 600px) {
+  main {
+    width: 100%;
+    padding: 0;
+    margin: 0 auto;
+    height: 20%;
+    margin-top: 50%;
+  }
+  body {
+    font-size: 0.5em;
+  }
+}
+
+section {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.button-group {
+  padding: 8px;
+}
+
+.connection-status {
+  padding: 2em 0;
+  font-size: 1.5em;
+  text-align: center;
+}
+button {
+  font-family: fa, monospace;
+  border: 0;
+  padding: 8px 16px;
+  background-color: #e8d881;
+  border-radius: 8px;
+  transition: all 50ms linear;
+  box-shadow: black 2px 2px 8px;
+}
+button:hover:disabled {
+  background-color: #e8d881;
+}
+button:hover {
+  background-color: #ecd341;
+}
+button:active {
+  box-shadow: black 0px 0px 0px;
 }

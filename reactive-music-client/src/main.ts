@@ -23,6 +23,8 @@ import { PianoService } from './services/PianoService'
 import { EventEmitter } from 'stream'
 import { parse } from 'path/posix'
 
+import classes from './style.css'
+
 const piano = new PianoService()
 const userManager = new UserManager()
 
@@ -37,7 +39,6 @@ window.onload = () => {
   piano.preLoadAudio()
 
   const loadButton = document.getElementById('join-btn') as HTMLButtonElement
-  const loadLocalhostbutton = document.getElementById('join-btn-local') as HTMLButtonElement
   const connectedAs = document.getElementById('connected-as') as HTMLDivElement
 
   let wss: WebSocket
@@ -45,16 +46,14 @@ window.onload = () => {
     console.log('join clicked')
     wss = new WebSocket(configuration.websocketUrl)
     setupWebSocket()
-  })
-  fromEvent<MouseEvent>(loadLocalhostbutton, 'click').subscribe((e) => {
-    wss = new WebSocket('ws://localhost:8080')
-    setupWebSocket()
+    loadButton.disabled = true
   })
 
   const recconected$ = new Subject<void>()
   const setupWebSocket = () => {
     fromEvent(wss, 'close').subscribe((e) => {
       connectedAs.innerText = 'Connection closed'
+      loadButton.disabled = false
     })
     fromEvent(wss, 'close')
       .pipe(switchMap((close) => interval(1000).pipe(takeUntil(recconected$))))

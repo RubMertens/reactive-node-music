@@ -4,19 +4,26 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="src/style.css" />
     <title>Vite App</title>
   </head>
   <body>
-    <h1>Reactive Music</h1>
+    <header>
+      <h1>Reactive Music</h1>
+    </header>
 
-    <p>Some text about the project</p>
+    <main>
+      <section>
+        <div class="connection-status">
+          <div id="connected-as"></div>
 
-    <button id="join-btn">Join</button>
-    <button id="join-btn-local">Join localhost</button>
-
-    <div id="connected-as"></div>
-
-    <div id="piano"></div>
+          <div id="piano"></div>
+        </div>
+        <div class="button-group">
+          <button id="join-btn">Join</button>
+        </div>
+      </section>
+    </main>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
