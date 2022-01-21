@@ -6,11 +6,11 @@
 }
 @font-face {
   font-family: fa;
-  src: url(./assets/PressStart2P-Regular.ttf);
+  src: url(/PressStart2P-Regular.ttf);
 }
 
 body {
-  background: url(./assets/dominik-scythe-412561-cropped.jpg) no-repeat center center fixed;
+  background: url(/dominik-scythe-412561-cropped.jpg) no-repeat center center fixed;
   -webkit-background-size: cover;
   -moz-background-size: cover;
   -o-background-size: cover;
