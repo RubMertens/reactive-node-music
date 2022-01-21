@@ -18,7 +18,9 @@ window.onload = () => {
 
   let wss = new WebSocket(configuration.websocketUrl);
 
-  // const playTestBtn = document.getElementById('play-test') as HTMLButtonElement
+  const pingSyncStatus = document.getElementById(
+    "ping-sync-status"
+  ) as HTMLLabelElement;
 
   const buttonDiv = document.getElementById("play-btns") as HTMLDivElement;
 
@@ -51,6 +53,30 @@ window.onload = () => {
     );
   });
 
+  fromEvent(
+    document.getElementById("ping-sync-off") as HTMLButtonElement,
+    "click"
+  ).subscribe(() => {
+    wss.send(
+      JSON.stringify({
+        type: "ping-sync-off",
+        data: "",
+      })
+    );
+  });
+
+  fromEvent(
+    document.getElementById("ping-sync-on") as HTMLButtonElement,
+    "click"
+  ).subscribe(() => {
+    wss.send(
+      JSON.stringify({
+        type: "ping-sync-on",
+        data: "",
+      })
+    );
+  });
+
   const reconnectedSubject$ = new Subject<void>();
   const setupWebSocket = () => {
     keyboardHandlers().subscribe((key) => {
@@ -70,8 +96,10 @@ window.onload = () => {
     );
 
     messages$
-      .pipe(filter((m) => m.type === "ping-status"))
-      .subscribe((pingStatusMessage) => {});
+      .pipe(filter((m) => m.type === "ping-sync-status"))
+      .subscribe((status) => {
+        pingSyncStatus!.innerText = status.data + "";
+      });
 
     messages$
       .pipe(filter((m) => m.type === "connected-clients"))

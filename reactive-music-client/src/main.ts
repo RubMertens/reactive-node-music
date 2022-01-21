@@ -52,6 +52,19 @@ window.onload = () => {
         setupWebSocket();
       });
 
+    // interval(1000)
+    //   .pipe(takeUntil(fromEvent(wss, "close")))
+    //   .subscribe(() => {
+    //     wss.send(
+    //       JSON.stringify({
+    //         type: "ping-req",
+    //         data: {
+    //           clientTime: Date.now(),
+    //         },
+    //       })
+    //     );
+    //   });
+
     fromEvent(wss, "open").subscribe((e) => {
       console.log("opened connection", e);
       recconected$.next();
@@ -85,6 +98,10 @@ window.onload = () => {
         console.log("playing", e);
         piano.play(e);
       });
+
+    //ping {server-time}
+    //pong {server-time, client-time}
+    //pingpong {serv}
 
     parsedMessage$
       .pipe(

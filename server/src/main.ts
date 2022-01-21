@@ -43,6 +43,7 @@ const connectedClients: {
 } = {};
 
 const connectedDashboards: { [key: string]: WebSocket } = {};
+let pingSyncEnabled = false;
 
 const stopSongs$ = new Subject<void>();
 
@@ -69,6 +70,17 @@ const publishConnectedClients = () => {
       })
     )
   );
+};
+
+const publishPingSyncState = () => {
+  Object.values(connectedDashboards).forEach((cd) => {
+    cd.send(
+      JSON.stringify({
+        type: "ping-sync-status",
+        data: pingSyncEnabled,
+      })
+    );
+  });
 };
 
 interval(1000).subscribe((i) => {
@@ -125,9 +137,9 @@ wss.on("connection", (ws) => {
       takeUntil(destroy$)
     )
     .subscribe((note) => {
-      const slowestPing = Object.values(connectedClients)
-        .map((cc) => cc.ping)
-        .reduce((prev, curr) => (prev >= curr ? prev : curr));
+      // const slowestPing = Object.values(connectedClients)
+      //   .map((cc) => cc.ping)
+      //   .reduce((prev, curr) => (prev >= curr ? prev : curr));
       for (const clientId in connectedClients) {
         connectedClients[clientId].ws.send(
           JSON.stringify({
@@ -153,9 +165,9 @@ wss.on("connection", (ws) => {
       map((e) => e.data as { note: string })
     )
     .subscribe((e) => {
-      const slowestPing = Object.values(connectedClients)
-        .map((cc) => cc.ping)
-        .reduce((prev, curr) => (prev >= curr ? prev : curr));
+      // const slowestPing = Object.values(connectedClients)
+      //   .map((cc) => cc.ping)
+      //   .reduce((prev, curr) => (prev >= curr ? prev : curr));
       for (const clientId in connectedClients) {
         const client = connectedClients[clientId];
         console.log(`sending play note to ${client.id}`);
@@ -208,9 +220,19 @@ wss.on("connection", (ws) => {
       );
 
       publishConnectedClients();
+      publishPingSyncState();
     });
   messages$.pipe(filter((e) => e.type === "stop-song")).subscribe((_) => {
     stopSongs$.next();
+  });
+
+  messages$.pipe(filter((e) => e.type === "ping-sync-off")).subscribe(() => {
+    pingSyncEnabled = false;
+    publishPingSyncState();
+  });
+  messages$.pipe(filter((e) => e.type === "ping-sync-on")).subscribe(() => {
+    pingSyncEnabled = true;
+    publishPingSyncState();
   });
 
   fromEvent(ws, "close").subscribe((close) => {
