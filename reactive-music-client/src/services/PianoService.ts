@@ -87,7 +87,6 @@ export class PianoService {
   }
 
   public play(timedNote: { note: string; velocity: number; duration: number }) {
-    console.log("playing", timedNote);
     const audio = this.piano[timedNote.note];
     audio.volume(timedNote.velocity * 0.1);
     audio.duration(timedNote.duration);

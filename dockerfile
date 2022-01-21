@@ -1,4 +1,4 @@
-FROM node:14 AS ui-build
+FROM node:14-alpine AS ui-build
 
 WORKDIR /usr/src/app
 
@@ -8,7 +8,7 @@ RUN cd reactive-music-client && yarn install && yarn run build
 
 
 
-FROM node:14 AS server-build
+FROM node:14-alpine AS server-build
 
 WORKDIR /root/
 

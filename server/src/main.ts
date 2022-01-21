@@ -16,12 +16,16 @@ import { MusicEngine } from "./MusicEngine";
 import { TimedNote } from "./TimedNote";
 
 const http = createServer((req, res) => {
+  if (req.url === "/") {
+    req.url = "/index.html";
+  }
   fs.readFile(__dirname + req.url, (err, data) => {
     if (err) {
       res.writeHead(404);
       res.end(JSON.stringify(err));
       return;
     }
+    console.log(req.url);
     if (req.url?.endsWith(".js")) {
       res.setHeader("Content-Type", "application/javascript");
     }
@@ -41,6 +45,35 @@ const connectedClients: {
 const connectedDashboards: { [key: string]: WebSocket } = {};
 
 const stopSongs$ = new Subject<void>();
+
+interval(1000).subscribe((i) => {
+  for (const client of Object.values(connectedClients)) {
+    client.ws.send(
+      JSON.stringify({
+        type: "ping",
+        data: { time: Date.now(), i },
+      })
+    );
+  }
+});
+
+const publishConnectedClients = () => {
+  Object.values(connectedDashboards).forEach((cd) =>
+    cd.send(
+      JSON.stringify({
+        type: "connected-clients",
+        data: Object.values(connectedClients).map((cc) => ({
+          name: cc.id,
+          ping: cc.ping,
+        })),
+      })
+    )
+  );
+};
+
+interval(1000).subscribe((i) => {
+  publishConnectedClients();
+});
 
 wss.on("connection", (ws) => {
   const id = uuid();
@@ -63,19 +96,6 @@ wss.on("connection", (ws) => {
     })
   );
 
-  const publishConnectedClients = () => {
-    Object.values(connectedDashboards).forEach((cd) =>
-      cd.send(
-        JSON.stringify({
-          type: "connected-clients",
-          data: Object.values(connectedClients).map((cc) => ({
-            name: cc.id,
-            ping: cc.ping,
-          })),
-        })
-      )
-    );
-  };
   publishConnectedClients();
 
   const messages$ = fromEvent(ws, "message").pipe(
@@ -85,23 +105,12 @@ wss.on("connection", (ws) => {
     // share()
   );
 
-  interval(500).subscribe((i) => {
-    if (connectedClients[id])
-      ws.send(
-        JSON.stringify({
-          type: "ping",
-          data: { time: Date.now(), i },
-        })
-      );
-  });
-
   messages$
     .pipe(
       filter((e) => e.type === "pong"),
       map((e) => e.data as { ping: number })
     )
     .subscribe((pingMsg) => {
-      publishConnectedClients();
       return (connectedClients[id].ping = pingMsg.ping);
     });
 
@@ -110,23 +119,31 @@ wss.on("connection", (ws) => {
       filter((e) => e.type === "play-song"),
       map((e) => e.data as { name: string }),
       tap((e) => console.log("received play song", e)),
-      switchMap((playSong) => musicEngine.play(playSong.name)),
-      takeUntil(destroy$),
-      takeUntil(stopSongs$)
+      switchMap((playSong) =>
+        musicEngine.play(playSong.name).pipe(takeUntil(stopSongs$))
+      ),
+      takeUntil(destroy$)
     )
     .subscribe((note) => {
       const slowestPing = Object.values(connectedClients)
         .map((cc) => cc.ping)
         .reduce((prev, curr) => (prev >= curr ? prev : curr));
       for (const clientId in connectedClients) {
-        setTimeout(() => {
-          connectedClients[clientId].ws.send(
-            JSON.stringify({
-              type: "play-note",
-              data: note,
-            })
-          );
-        }, slowestPing - connectedClients[clientId].ping);
+        connectedClients[clientId].ws.send(
+          JSON.stringify({
+            type: "play-note",
+            data: note,
+          })
+        );
+
+        // setTimeout(() => {
+        //   connectedClients[clientId].ws.send(
+        //     JSON.stringify({
+        //       type: "play-note",
+        //       data: note,
+        //     })
+        //   );
+        // }, slowestPing - connectedClients[clientId].ping);
       }
     });
 
@@ -141,19 +158,31 @@ wss.on("connection", (ws) => {
         .reduce((prev, curr) => (prev >= curr ? prev : curr));
       for (const clientId in connectedClients) {
         const client = connectedClients[clientId];
-        setTimeout(() => {
-          client.ws.send(
-            JSON.stringify({
-              type: "play-note",
-              data: {
-                note: e.note,
-                duration: 1000,
-                velocity: 1000,
-                start: 0,
-              } as TimedNote,
-            })
-          );
-        }, slowestPing - client.ping);
+        console.log(`sending play note to ${client.id}`);
+        client.ws.send(
+          JSON.stringify({
+            type: "play-note",
+            data: {
+              note: e.note,
+              duration: 1000,
+              velocity: 1000,
+              start: 0,
+            } as TimedNote,
+          })
+        );
+        // setTimeout(() => {
+        //   client.ws.send(
+        //     JSON.stringify({
+        //       type: "play-note",
+        //       data: {
+        //         note: e.note,
+        //         duration: 1000,
+        //         velocity: 1000,
+        //         start: 0,
+        //       } as TimedNote,
+        //     })
+        //   );
+        // }, slowestPing - client.ping);
       }
     });
 
@@ -162,11 +191,13 @@ wss.on("connection", (ws) => {
       filter((e) => e.type === "identify"),
       map((e) => e.data)
     )
-    .subscribe((msg) => {
+    .subscribe((e) => {
       //by the power of closure, we can rely on id being captured in the function scope
-      connectedDashboards[id] = ws;
-      delete connectedClients[id];
-      console.log("Connected dashboard clients", id);
+      console.log("identified", e.id, "as dashboard");
+      console.log("data:", e);
+      connectedDashboards[e.id] = ws;
+      delete connectedClients[e.id];
+      console.log("Connected dashboard clients", e.id);
       console.log(
         `Connected normal clients: [${Object.keys(connectedClients).length}]`
       );
@@ -187,6 +218,7 @@ wss.on("connection", (ws) => {
     destroy$.complete();
     console.log(`Client with id ${id} closed`);
     delete connectedClients[id];
+    delete connectedDashboards[id];
   });
 });
 

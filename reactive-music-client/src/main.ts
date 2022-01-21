@@ -6,7 +6,8 @@ import {
   share,
   Subject,
   switchMap,
-  takeUntil
+  takeUntil,
+  tap,
 } from "rxjs";
 import "../assets/dominik-scythe-412561-cropped.jpg";
 import "../assets/PressStart2P-Regular.ttf";
@@ -70,12 +71,15 @@ window.onload = () => {
         connectedAs.innerText = `Connected as ${e.id}`;
       });
 
+    console.log("subbing to messages and stuff");
     parsedMessage$
       .pipe(
         filter((e) => e.type === "play-note"),
+
         map(
           (e) => e.data as { note: string; velocity: number; duration: number }
-        )
+        ),
+        tap((e) => console.log(e))
       )
       .subscribe((e) => {
         console.log("playing", e);
@@ -99,17 +103,4 @@ window.onload = () => {
         );
       });
   };
-};
-
-const makePianoDom = () => {
-  const container = document.getElementById("piano");
-  for (const key in piano.piano) {
-    if (Object.prototype.hasOwnProperty.call(piano.piano, key)) {
-      const note = piano.piano[key];
-      const btn = document.createElement("button");
-      btn.innerText = key;
-      btn.onclick = () => note.play();
-      container?.appendChild(btn);
-    }
-  }
 };
