@@ -21,6 +21,7 @@
   "scripts": {
     "start": "concurrently \"yarn compile:dev\" \"yarn run:dev\"",
     "compile:dev": "tsc --watch",
-    "run:dev": "nodemon dist/main.js"
+    "run:dev": "nodemon dist/main.js",
+    "build": "tsc"
   }
 }
