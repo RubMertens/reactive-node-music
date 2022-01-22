@@ -14,11 +14,15 @@ WORKDIR /root/
 
 COPY --from=ui-build /usr/src/app/reactive-music-client/dist ./dist
 
-COPY server/**  ./
+COPY server/package.json  ./
+COPY server/yarn.lock ./
 
 RUN yarn install
+COPY server/tsconfig.json ./
+COPY server/src/** ./src/
+
 RUN yarn build
-RUN ls
+COPY server/src/music/** dist/music/
 
 EXPOSE 8080
 

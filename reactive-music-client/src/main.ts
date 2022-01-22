@@ -68,6 +68,7 @@ window.onload = () => {
     fromEvent(wss, "open").subscribe((e) => {
       console.log("opened connection", e);
       recconected$.next();
+      loadButton.disabled = true;
     });
 
     const parsedMessage$ = fromEvent<MessageEvent>(wss, "message").pipe(
