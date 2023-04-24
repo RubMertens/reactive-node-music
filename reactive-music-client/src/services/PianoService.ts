@@ -65,109 +65,110 @@ import Gb4 from "../../assets/audio_files/piano/Gb4.webm";
 import Gb5 from "../../assets/audio_files/piano/Gb5.webm";
 
 export const PianoServiceConfiguration = {
-  html5PoolSize: 30,
+    html5PoolSize: 30,
 };
 
 export class PianoService {
-  constructor() {
-    Howler.html5PoolSize = PianoServiceConfiguration.html5PoolSize;
-  }
+    piano: { [key: string]: Howl } = {};
+    audiofiles: { [key: string]: string } = {
+        Bb1,
+        B1,
+        C1,
+        Db1,
+        D1,
+        Eb1,
+        E1,
+        F1,
+        Gb1,
+        G1,
+        Ab1,
+        A1,
+        Bb2,
+        B2,
+        C2,
+        Db2,
+        D2,
+        Eb2,
+        E2,
+        F2,
+        Gb2,
+        G2,
+        Ab2,
+        A2,
+        Bb3,
+        B3,
+        C3,
+        Db3,
+        D3,
+        Eb3,
+        E3,
+        F3,
+        Gb3,
+        G3,
+        Ab3,
+        A3,
+        Bb4,
+        B4,
+        C4,
+        Db4,
+        D4,
+        Eb4,
+        E4,
+        F4,
+        Gb4,
+        G4,
+        Ab4,
+        A4,
+        Bb5,
+        B5,
+        C5,
+        Db5,
+        D5,
+        Eb5,
+        E5,
+        F5,
+        Gb5,
+        G5,
+        Ab5,
+        A5,
+        Bb6,
+        B6,
+        C6,
+        Db6,
+    };
 
-  preLoadAudio() {
-    for (const key in this.audiofiles) {
-      // console.log('loading', key)
-      const note = new Howl({
-        src: this.audiofiles[key],
-        preload: true,
-        pool: 10,
-      });
-      this.piano[key] = note;
-      (window as any).piano = this.piano;
+    constructor() {
+        Howler.html5PoolSize = PianoServiceConfiguration.html5PoolSize;
     }
-  }
 
-  public play(timedNote: { note: string; velocity: number; duration: number }) {
-    const audio = this.piano[timedNote.note];
-    audio.volume(timedNote.velocity * 0.1);
-    audio.duration(timedNote.duration);
-    audio.play();
-  }
+    preLoadAudio() {
+        for (const key in this.audiofiles) {
+            // console.log('loading', key)
+            const note = new Howl({
+                src: this.audiofiles[key],
+                preload: true,
+                pool: 10,
+            });
+            this.piano[key] = note;
+            (window as any).piano = this.piano;
+        }
+    }
 
-  // play(timedNote: string) {
-  //   const [note, velocity, duration] = timedNote.split(':')
-  //   const audio = this.piano[note]
-  //   console.log('playing', note)
-  //   audio.volume(Number.parseFloat(velocity))
-  //   audio.duration(Number.parseFloat(duration))
-  //   audio.play()
-  // }
+    public play(timedNote: { note: string; velocity: number; duration: number }) {
+        const audio = this.piano[timedNote.note];
+        audio.volume(timedNote.velocity * 0.1);
+        audio.duration(timedNote.duration);
+        audio.play();
+    }
 
-  piano: { [key: string]: Howl } = {};
-
-  audiofiles: { [key: string]: string } = {
-    Bb1,
-    B1,
-    C1,
-    Db1,
-    D1,
-    Eb1,
-    E1,
-    F1,
-    Gb1,
-    G1,
-    Ab1,
-    A1,
-    Bb2,
-    B2,
-    C2,
-    Db2,
-    D2,
-    Eb2,
-    E2,
-    F2,
-    Gb2,
-    G2,
-    Ab2,
-    A2,
-    Bb3,
-    B3,
-    C3,
-    Db3,
-    D3,
-    Eb3,
-    E3,
-    F3,
-    Gb3,
-    G3,
-    Ab3,
-    A3,
-    Bb4,
-    B4,
-    C4,
-    Db4,
-    D4,
-    Eb4,
-    E4,
-    F4,
-    Gb4,
-    G4,
-    Ab4,
-    A4,
-    Bb5,
-    B5,
-    C5,
-    Db5,
-    D5,
-    Eb5,
-    E5,
-    F5,
-    Gb5,
-    G5,
-    Ab5,
-    A5,
-    Bb6,
-    B6,
-    C6,
-    Db6,
-  };
+    public iphonePlay(timedNote: { note: string; velocity: number; duration: number }) {
+        const audio = new Howl({
+            src: "./assets/audio_files/piano/"+timedNote.note+".m4a",
+            preload: true,
+            pool: 10,
+        });
+        audio.volume(timedNote.velocity * 0.1);
+        audio.duration(timedNote.duration);
+        audio.play();
+    }
 }
